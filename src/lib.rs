@@ -2,7 +2,10 @@ use std::{error::Error, fs};
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let content = fs::read_to_string(config.file_path)?;
-    for line in search(&config.query, &content) {
+    for line in search(&config.query, &content).unwrap_or_else(|err| {
+        println!("{err}");
+        vec!["ERROR"]
+    }) {
         println!("{line}")
     }
     Ok(())
@@ -24,14 +27,17 @@ impl Config {
     }
 }
 
-pub fn search<'a>(query: &'a str, contents: &'a str) -> Vec<&'a str> {
+pub fn search<'a>(query: &'a str, contents: &'a str) -> Result<Vec<&'a str>, Box<dyn Error>> {
     let mut v = vec![];
     for line in contents.lines() {
         if line.contains(query) {
             v.push(line.trim());
         }
     }
-    v
+    if v.is_empty() {
+        return Err("NOT FOUND".into());
+    }
+    Ok(v)
 }
 
 #[cfg(test)]
